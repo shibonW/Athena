@@ -34,6 +34,7 @@
 #include "calibration.h"
 #include "w25q64_ll.h"
 #include "uart_receive.h"
+#include "Log.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -63,7 +64,7 @@ SemaphoreHandle_t UartRxReady = NULL;
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .stack_size = 128 * 10,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -137,7 +138,33 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+	BSP_W25Qx_Init();
+	while(true){
+//			  uint8_t tx_data[128] = {0xef};
+//			  uint8_t rx_data[128] = {0x00};
+//			  BSP_W25Qx_Write(tx_data, 0x123456, 1);
+//			  BSP_W25Qx_Read(rx_data, 0x123456, 1);
+//	uint8_t ID[2]={0};
+//	BSP_W25Qx_Read_ID(ID);
+	SensorData sensorDataArray[32];
+	 for (int i = 0; i < 32; i++) {
+	        sensorDataArray[i].x = i * 1.0f;  // 将x设置为索引的浮点数形式
+	        sensorDataArray[i].y = i * 2.0f;  // 将y设置为索引的两倍
+	        sensorDataArray[i].z = i * 3.0f;  // 将z设置为索引的三倍
+	        sensorDataArray[i].timestamp = (uint8_t)(i % 256);  // 给timestamp赋值为循环变量i（确保在0-255之间）
+	    }
+	 for(int i=0; i < 32; i++){
+		 AddSensorData(sensorDataArray[i]);
+	 }
+	 SensorData receive[32];
+	 BSP_W25Qx_Read((uint8_t*)receive,0x000000,256);
+	 int b = sizeof(SensorData);
+	}
   /* Infinite loop */
+
+/*
+	int b = sizeof(SensorData);
+
 	static uint8_t Pos[6];
 	uint8_t index = 0;
 	for(;;)
@@ -159,10 +186,13 @@ void StartDefaultTask(void *argument)
 	  else{
 		  BSP_W25Qx_Init();
 	  }
-//	  BSP_W25Qx_Init();
+	  BSP_W25Qx_Init();
+*/
+
+
 //	  uint8_t ID[2]={0};
 //	  BSP_W25Qx_Read_ID(ID);
-//	  //BSP_W25Qx_Erase_Chip();
+//	  BSP_W25Qx_Erase_Chip();
 //	  BSP_W25Qx_Erase_Block(0x123456);
 //	  uint8_t tx_data[128] = {0xef};
 //	  uint8_t rx_data[128] = {0x00};
@@ -180,7 +210,7 @@ void StartDefaultTask(void *argument)
 //	  	  LL_mDelay(100);
 //	  	  get_sensor_data(&vl53l5dev_f, &vl53l5_res_f);
 //	  }
-  }
+//  }
   /* USER CODE END StartDefaultTask */
 }
 

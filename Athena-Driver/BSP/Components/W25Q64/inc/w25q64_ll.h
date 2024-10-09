@@ -10,6 +10,7 @@
 
 #include "stm32l4xx_ll_gpio.h"
 #include "main.h"
+#include <stddef.h>
 
 
 #define DUMMY_BYTE 0x00
