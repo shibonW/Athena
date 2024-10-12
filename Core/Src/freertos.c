@@ -39,6 +39,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+//static uint32_t flash_start_addr = FLASH_START_ADDR;
+
 static VL53L5CX_Configuration vl53l5dev_f;
 static VL53L5CX_ResultsData vl53l5_res_f;
 SemaphoreHandle_t txComplete = NULL;
@@ -139,6 +141,7 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
 	BSP_W25Qx_Init();
+	static uint32_t flash_start_addr = FLASH_START_ADDR;
 	while(true){
 //			  uint8_t tx_data[128] = {0xef};
 //			  uint8_t rx_data[128] = {0x00};
@@ -146,19 +149,23 @@ void StartDefaultTask(void *argument)
 //			  BSP_W25Qx_Read(rx_data, 0x123456, 1);
 //	uint8_t ID[2]={0};
 //	BSP_W25Qx_Read_ID(ID);
-	SensorData sensorDataArray[32];
-	 for (int i = 0; i < 32; i++) {
-	        sensorDataArray[i].x = i * 1.0f;  // 将x设置为索引的浮点数形式
-	        sensorDataArray[i].y = i * 2.0f;  // 将y设置为索引的两倍
-	        sensorDataArray[i].z = i * 3.0f;  // 将z设置为索引的三倍
-	        sensorDataArray[i].timestamp = (uint8_t)(i % 256);  // 给timestamp赋值为循环变量i（确保在0-255之间）
-	    }
-	 for(int i=0; i < 32; i++){
-		 AddSensorData(sensorDataArray[i]);
-	 }
-	 SensorData receive[32];
-	 BSP_W25Qx_Read((uint8_t*)receive,0x000000,256);
-	 int b = sizeof(SensorData);
+//		int b = sizeof(SensorData);
+	SensorData sensorDataArray;
+	 	 for (int i = 0; i < 500; i++) {
+	        sensorDataArray.x = (int16_t)(i * 1.0f);  // 将x设置为索引的浮点数形式
+	        sensorDataArray.y = (int16_t)(i * 2.0f);  // 将y设置为索引的两倍
+	        sensorDataArray.z = (int16_t)(i * 3.0f);  // 将z设置为索引的三倍
+	        sensorDataArray.timestamp = (uint8_t)(i % 256);  // 给timestamp赋值为循环变量i（确保在0-255之间）
+	        AddSensorData(sensorDataArray,&flash_start_addr);
+	 	 }
+
+	 SensorData receive[BUFFER_SIZE];
+//	 BSP_W25Qx_Read((uint8_t*)receive,FLASH_START_ADDR,256);
+	 	 for(int i=0;i<16;i++){
+	 		 BSP_W25Qx_Read((uint8_t*)receive,(uint32_t)(FLASH_START_ADDR+256*i),256);
+	 	 }
+//	 BSP_W25Qx_Read((uint8_t*)receive,FLASH_START_ADDR,256);
+//	 int b = sizeof(SensorData);
 	}
   /* Infinite loop */
 
