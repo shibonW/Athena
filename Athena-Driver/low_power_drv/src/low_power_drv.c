@@ -20,6 +20,7 @@ void WKUP_Init(void)
     LL_GPIO_SetPinPull(GPIOC, LL_GPIO_PIN_1, LL_GPIO_PULL_UP);
     LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_CEC);
     LL_PWR_EnableWakeUpPin(LL_PWR_WAKEUP_PIN6);
+    LL_DBGMCU_DisableD1DebugInStandbyMode();
 #if (ENABLE_DBG_STANDBY == 1)
     LL_DBGMCU_EnableD1DebugInStopMode();
     LL_DBGMCU_EnableD1DebugInStandbyMode();

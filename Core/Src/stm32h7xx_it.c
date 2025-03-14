@@ -239,45 +239,65 @@ void SPI2_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-uint8_t usart2_rxBuf[128] = {0};
+uint8_t usart2_rxBuf[16] = {0};
 uint8_t usart2_rxIndex = 0;
 static uint8_t usart2_sta = 0;
 extern SemaphoreHandle_t Uart2RxComplete;
 uint8_t data[8] = {0,1,2,3,4,5,6,7};
 void USART2_IRQHandler(void)
 {
-	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-	if(LL_USART_IsActiveFlag_ORE(USART2)){
-		  LL_USART_ClearFlag_ORE(USART2);
-	}
-	if(LL_USART_IsActiveFlag_RXNE(USART2))
-	{
-		uint8_t recv = LL_USART_ReceiveData8(USART2);
-		printf("%c\n", recv);
-		switch(usart2_sta){
-		case 0:
-			if(recv == 0xFE)usart2_sta = 1;
-			break;
-		case 1:
-			if(usart2_rxIndex > 7)
-			{
-				usart2_sta = 0;
-				usart2_rxIndex = 0;
-				printf("recv error\n");
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    if (LL_USART_IsActiveFlag_ORE(USART2)) {
+        LL_USART_ClearFlag_ORE(USART2);
+    }
 
-			}
-			if(recv == 0xEF){
-				usart2_rxBuf[usart2_rxIndex++] = '\0';
-				printf("finish recive:%s\n",usart2_rxBuf);
-				usart2_sta = 0;
-				usart2_rxIndex = 0;
-				xSemaphoreGiveFromISR(Uart2RxComplete, &xHigherPriorityTaskWoken);
-			}
-			else usart2_rxBuf[usart2_rxIndex++] = recv;
-			break;
-		}
-	}
-	portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    if (LL_USART_IsActiveFlag_RXNE(USART2)) {
+        uint8_t recv = LL_USART_ReceiveData8(USART2);
+        switch (usart2_sta) {
+            case 0: // 等待帧头
+                if (recv == 0xFE) {
+                    usart2_sta = 1;
+                    usart2_rxIndex = 0; // 重置索引
+                }
+                break;
+
+            case 1: // 接收数据部分
+            	if(recv == 0xFE){
+            		usart2_rxIndex = 0;
+            		break;
+            	}
+                if (recv == 0xEF) { // 检测帧尾
+                    if (usart2_rxIndex == 6) { // 校验数据长度是否为6字节
+                        xSemaphoreGiveFromISR(Uart2RxComplete, &xHigherPriorityTaskWoken);
+                    } else {
+                        printf("Data length error\n");
+                    }
+                    usart2_sta = 0; // 重置状态机
+                    usart2_rxIndex = 0;
+                    // 打印调试专用(可删除)
+//                    for(int i = 0; i < 7; i ++)
+//					{
+//						printf("%x ", usart2_rxBuf[i]);
+//					}
+//					printf("\n");
+                } else {
+                    if (usart2_rxIndex >= 6) { // 数据长度超限
+                        printf("Buffer overflow\n");
+                        usart2_sta = 0;
+                        usart2_rxIndex = 0;
+                        //打印调试专用(可删除)
+//                      for(int i = 0; i < 7; i ++)
+//						{
+//							printf("%x ", usart2_rxBuf[i]);
+//						}
+//						printf("\n");
+                    } else {
+                        usart2_rxBuf[usart2_rxIndex++] = recv; // 存储有效数据
+                    }
+                }
+                break;
+        }
+    }
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
-
 /* USER CODE END 1 */

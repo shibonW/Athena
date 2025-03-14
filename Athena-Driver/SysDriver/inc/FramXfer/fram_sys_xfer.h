@@ -25,7 +25,7 @@ typedef struct {
     uint8_t type;
     uint8_t* content;
 } DataPacket;
-extern FM25ObjectType fm25;
+
 
 void Framinit();
 void FramXfertoPerform(uint8_t* data, size_t len);

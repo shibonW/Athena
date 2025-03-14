@@ -41,7 +41,9 @@ bool spi2ExchangeOld(SPI_TypeDef* SPIx, size_t length, const uint8_t* data_tx, u
 }
 
 // 静态变量用于错误计数（实际应用中建议使用原子操作）
-static volatile uint8_t spiErrorCount = 0;
+//static volatile uint8_t spiErrorCount = 0;
+extern uint16_t spiCount;
+extern uint16_t spiErrorCount;
 
 bool spi2Exchange(SPI_TypeDef* SPIx, size_t length,
                 const uint8_t* data_tx, uint8_t* data_rx)
@@ -78,17 +80,19 @@ bool spi2Exchange(SPI_TypeDef* SPIx, size_t length,
         // 等待传输完成（带超时）
         bool txDone = (xSemaphoreTake(txComplete, xTicksToWait) == pdTRUE);
         bool rxDone = (xSemaphoreTake(rxComplete, xTicksToWait) == pdTRUE);
-        uint8_t test_char = *data_rx;
+        spiCount ++;
 
-        if((*data_rx & *(data_rx+1)) != 0xFF){
+//        if((*data_rx & *(data_rx+1)) != 0xFF){
+        if(*data_rx == 8){
             // 传输成功，重置错误计数器
             LL_GPIO_ResetOutputPin(ERROR_GPIO_PORT, ERROR_GPIO_PIN);
             return true;
         } else {
         	spiErrorCount ++;
-        	LL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        	osDelay(200);
-        	LL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+//        	LL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+//        	osDelay(200);
+//        	LL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+        	printf("Retry %d times\n", retries+1);
             // 传输失败处理
             LL_SPI_Disable(SPI2);
             LL_DMA_DisableStream(DMA1, LL_DMA_STREAM_0);
@@ -96,7 +100,7 @@ bool spi2Exchange(SPI_TypeDef* SPIx, size_t length,
             // 增加错误计数
             if(++retries >= ERROR_THRESHOLD) {
                 LL_GPIO_SetOutputPin(ERROR_GPIO_PORT, ERROR_GPIO_PIN);
-                osDelay(200);
+                osDelay(10);
                 LL_GPIO_ResetOutputPin(ERROR_GPIO_PORT, ERROR_GPIO_PIN);
                 printf("Retry over 5 times!\n");
             }

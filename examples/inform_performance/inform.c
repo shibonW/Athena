@@ -16,6 +16,7 @@ SemaphoreHandle_t txComplete = NULL;
 SemaphoreHandle_t rxComplete = NULL;
 SemaphoreHandle_t spiMutex = NULL;
 SemaphoreHandle_t FRAMxferMutex = NULL;
+extern FM25ObjectType fm25;
 
 static void informTask(void *argument);
 
@@ -23,7 +24,7 @@ osThreadId_t informTaskHandle;
 
 const osThreadAttr_t informTask_attributes = {
   .name = "informTask",
-  .stack_size = 128 * 10,
+  .stack_size = 128 * 8,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -36,17 +37,20 @@ static const UserInit informTask_init = {
 	.name = "informH7",
 };
 
-//USER_INIT(informTask_init);
-
+USER_INIT(informTask_init);
+uint16_t spiCount = 0;
+uint16_t spiErrorCount = 0;
 static void informTask(void *argument)
 {
 	LL_GPIO_SetOutputPin(LED_GPIO_Port, LED_Pin);
 	txComplete = xSemaphoreCreateBinary();
 	rxComplete = xSemaphoreCreateBinary();
 	spiMutex = xSemaphoreCreateMutex();
+
 //	FRAMxferMutex = xSemaphoreCreateMutex();
-	debug_print_init();
-	printf("Hello World!Debug print init ok!\n");
+//	debug_print_init();
+//	printf("Hello World!Debug print init ok!\n");
+
 	Framinit();
 	LL_GPIO_ResetOutputPin(LED_GPIO_Port, LED_Pin);
 	uint8_t data[100] = {0};
@@ -63,11 +67,12 @@ static void informTask(void *argument)
 	}
 	while(1){
 //		XfertoPerformance(&pk);
-		ReadBytesFromFM25xxx(&fm25,0x00,data1,100);
-		if((data1[1] & data1[0]) != 0xFF)printf("True\n");
-		else printf("false\n");
-		memset(data1, 0, sizeof(data1));
+//		ReadBytesFromFM25xxx(&fm25,0x00,data1,100);
+//		if((data1[1] & data1[0]) != 0xFF)printf("True\n");
+//		else printf("false\n");
+//		memset(data1, 0, sizeof(data1));
 		LL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 		osDelay(500);
 	}
+	printf("1000 times read need %d times spi read error %d times\n",spiCount,spiErrorCount);
 }

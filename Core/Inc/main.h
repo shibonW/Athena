@@ -49,7 +49,6 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include "spi_drv.h"
 #include "fm25cl64.h"
-
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
